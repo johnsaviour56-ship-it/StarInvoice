@@ -1,6 +1,9 @@
 use soroban_sdk::{symbol_short, Address, Env};
 
-/// Emitted when a new invoice is created.
+/// Emits an event when a new invoice is created.
+///
+/// Topic: `("INVOICE", "created")`
+/// Data:  `(invoice_id, freelancer, client, amount)`
 pub fn invoice_created(
     env: &Env,
     invoice_id: u64,
@@ -15,8 +18,8 @@ pub fn invoice_created(
 }
 
 // TODO: Add event emitters for each state transition:
-// - fund_invoice    -> emit "INVOICE funded"
-// - mark_delivered  -> emit "INVOICE delivered"
-// - approve_payment -> emit "INVOICE approved"
-// - release_payment -> emit "INVOICE released"
+// - fund_invoice    -> emit "INVOICE funded"   | data: (invoice_id, client)
+// - mark_delivered  -> emit "INVOICE delivered" | data: (invoice_id, freelancer)
+// - approve_payment -> emit "INVOICE approved"  | data: (invoice_id, client)
+// - release_payment -> emit "INVOICE released"  | data: (invoice_id, amount)
 // See: https://github.com/your-org/StarInvoice/issues/7
