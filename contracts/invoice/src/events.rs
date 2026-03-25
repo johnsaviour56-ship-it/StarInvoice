@@ -28,6 +28,28 @@ pub fn invoice_cancelled(env: &Env, invoice_id: u64, cancelled_by: &Address) {
     );
 }
 
+/// Emits an event when an invoice is marked as delivered.
+///
+/// Topic: `("INVOICE", "delivered")`
+/// Data:  `(invoice_id, freelancer)`
+pub fn mark_delivered(env: &Env, invoice_id: u64, freelancer: &Address) {
+    env.events().publish(
+        (symbol_short!("INVOICE"), symbol_short!("delivered")),
+        (invoice_id, freelancer.clone()),
+    );
+}
+
+/// Emits an event when an invoice payment is approved.
+///
+/// Topic: `("INVOICE", "approved")`
+/// Data:  `(invoice_id, client)`
+pub fn approve_payment(env: &Env, invoice_id: u64, client: &Address) {
+    env.events().publish(
+        (symbol_short!("INVOICE"), symbol_short!("approved")),
+        (invoice_id, client.clone()),
+    );
+}
+
 // TODO: Add event emitters for each state transition:
 // - fund_invoice    -> emit "INVOICE funded"   | data: (invoice_id, client)
 // - mark_delivered  -> emit "INVOICE delivered" | data: (invoice_id, freelancer)
