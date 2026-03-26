@@ -135,6 +135,11 @@ impl InvoiceContract {
         storage::get_invoice_count(&env)
     }
 
+    /// Returns the data for a specific invoice ID.
+    pub fn get_invoice(env: Env, invoice_id: u64) -> Invoice {
+        storage::get_invoice(&env, invoice_id)
+    }
+
     /// Cancels a Pending invoice, voiding it permanently.
     ///
     /// # Parameters
@@ -350,5 +355,27 @@ mod tests {
             &String::from_str(&env, "Desc 2"),
         );
         assert_eq!(client.invoice_count(), 2);
+    }
+
+    #[test]
+    fn test_get_invoice() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let contract_id = env.register_contract(None, InvoiceContract);
+        let client = InvoiceContractClient::new(&env, &contract_id);
+
+        let freelancer = Address::generate(&env);
+        let payer = Address::generate(&env);
+        let description = String::from_str(&env, "Test get_invoice");
+
+        let invoice_id = client.create_invoice(&freelancer, &payer, &1000, &description);
+        let invoice = client.get_invoice(&invoice_id);
+
+        assert_eq!(invoice.id, invoice_id);
+        assert_eq!(invoice.freelancer, freelancer);
+        assert_eq!(invoice.client, payer);
+        assert_eq!(invoice.amount, 1000);
+        assert_eq!(invoice.description, description);
     }
 }
