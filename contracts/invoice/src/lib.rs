@@ -76,12 +76,12 @@ impl InvoiceContract {
             return Err(ContractError::InvalidInvoiceStatus);
         }
 
-        assert!(
-            env.ledger().timestamp() <= invoice.deadline,
-            "Invoice has expired"
-        );
-
-        let token = token::Client::new(&env, &invoice.token);
+        let token = token::Client::new(&env, &token_address);
+        // SAFETY: Soroban cross-contract calls are synchronous and atomic within a single
+        // transaction. There is no re-entrant execution path — a callee cannot call back into
+        // this contract mid-transfer because Soroban does not support async callbacks or
+        // mid-transaction re-entry. State is committed only after the full call tree succeeds.
+        // See: https://developers.stellar.org/docs/learn/smart-contract-internals/contract-interactions/cross-contract
         token.transfer(&invoice.client, &env.current_contract_address(), &invoice.amount);
 
         invoice.status = storage::InvoiceStatus::Funded;
@@ -188,22 +188,16 @@ impl InvoiceContract {
     ///
     /// # Errors
     /// - Panics if the invoice status is not `Approved`.
-    pub fn release_payment(env: Env, invoice_id: u64, token_address: Address) -> Result<(), ContractError> {
-        let mut invoice = storage::get_invoice(&env, invoice_id)?;
-
-        assert!(
-            invoice.status == storage::InvoiceStatus::Approved,
-            "Invoice must be in Approved status"
-        );
-
-        let token = token::Client::new(&env, &token_address);
-        token.transfer(&env.current_contract_address(), &invoice.freelancer, &invoice.amount);
-
-        invoice.status = storage::InvoiceStatus::Completed;
-        storage::save_invoice(&env, &invoice);
-
-        events::release_payment(&env, invoice_id, &invoice.freelancer, invoice.amount);
-        Ok(())
+    ///
+    /// # TODO
+    /// Not yet implemented. See: <https://github.com/your-org/StarInvoice/issues/4>
+    pub fn release_payment(_env: Env, _invoice_id: u64) {
+        // SAFETY: When implemented, the token transfer here is safe from reentrancy.
+        // Soroban executes cross-contract calls synchronously within a single transaction;
+        // a callee cannot re-enter this contract mid-transfer. State updates should still
+        // be written before the transfer (checks-effects-interactions) as a best practice.
+        // See: https://developers.stellar.org/docs/learn/smart-contract-internals/contract-interactions/cross-contract
+        todo!("release_payment not yet implemented")
     }
 }
 
