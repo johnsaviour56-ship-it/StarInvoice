@@ -40,11 +40,12 @@ pub struct Invoice {
     pub amount: i128,
     /// Human-readable description of the work to be performed.
     pub description: String,
+    /// Address of the token contract used for payment.
+    pub token: Address,
+    /// Unix timestamp after which the invoice can no longer be funded.
+    pub deadline: u64,
     /// Current state of the invoice in the escrow lifecycle.
     pub status: InvoiceStatus,
-    // TODO: Add deadline / expiry field
-    // TODO: Add token address field for multi-token support
-    // See: https://github.com/your-org/StarInvoice/issues/6
 }
 
 #[contracttype]
@@ -62,19 +63,25 @@ pub fn get_invoice_count(env: &Env) -> u64 {
 }
 
 /// Returns the next available invoice ID and increments the counter.
+///
+/// Storage: persistent — the counter must survive contract upgrades and
+/// instance expiry. Losing it would cause ID collisions with existing invoices.
 pub fn next_invoice_id(env: &Env) -> u64 {
     let count: u64 = env
         .storage()
-        .instance()
+        .persistent()
         .get(&DataKey::InvoiceCount)
         .unwrap_or(0);
     env.storage()
-        .instance()
+        .persistent()
         .set(&DataKey::InvoiceCount, &(count + 1));
     count
 }
 
 /// Persists an invoice to on-chain storage, keyed by its ID.
+///
+/// Storage: persistent — invoices hold escrowed funds and must remain
+/// accessible for the full escrow lifecycle, independent of instance TTL.
 pub fn save_invoice(env: &Env, invoice: &Invoice) {
     env.storage()
         .persistent()
